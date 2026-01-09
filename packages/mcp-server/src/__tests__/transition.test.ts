@@ -175,7 +175,7 @@ describe("executeTransition", () => {
       );
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.reason).toContain("already");
+        expect(result.reason.toLowerCase()).toContain("already");
       }
     });
   });

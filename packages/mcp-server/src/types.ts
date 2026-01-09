@@ -47,6 +47,7 @@ export interface ModeStatus {
   initialMode: string;
   lastTransition: string | null; // ISO 8601 or null if fresh
   transitionHistory: TransitionHistoryEntry[];
+  availableTransitions: ModeTransition[];
 }
 
 export interface StatusError {

@@ -98,6 +98,10 @@ modes:
         constraint: User described a bug
       - to: docs
         constraint: User wants documentation
+  test-dev:
+    transitions: []
+  docs:
+    transitions: []
 `;
       fs.writeFileSync(path.join(tempDir, "modes.yaml"), yaml);
 
@@ -115,7 +119,7 @@ modes:
     it("handles multiline constraints", () => {
       const yaml = `
 name: tdd
-default: idle
+default: test-dev
 
 modes:
   test-dev:
@@ -124,6 +128,8 @@ modes:
         constraint: |
           A test exists that targets the bug/feature.
           The test has been executed and is currently failing.
+  feature-dev:
+    transitions: []
 `;
       fs.writeFileSync(path.join(tempDir, "modes.yaml"), yaml);
 

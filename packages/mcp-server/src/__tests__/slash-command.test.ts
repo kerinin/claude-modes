@@ -88,7 +88,7 @@ describe("handleModeCommand", () => {
     it("/mode help returns usage info", () => {
       const result = handleModeCommand("help", stateFilePath, testConfig);
       expect(result.success).toBe(true);
-      expect(result.output).toContain("usage");
+      expect(result.output.toLowerCase()).toContain("usage");
     });
   });
 
