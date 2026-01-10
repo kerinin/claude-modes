@@ -2,12 +2,11 @@
 description: Control workflow mode state
 ---
 
-Handle the /mode command for mode management.
-
 Arguments: $ARGUMENTS
 
-Based on the arguments:
-- No args or "status": Call the `status` MCP tool and display the result
-- "reset": Call `force_transition` with target set to "idle"
-- "<mode-name>": Call `force_transition` with the specified target
-- "help": Show usage: /mode, /mode status, /mode <name>, /mode reset
+Immediately call the appropriate MCP tool (do not read files first):
+
+- No args or "status": Call `status` tool
+- "reset": Call `force_transition` with target "idle"
+- "<mode-name>": Call `force_transition` with that target
+- "help": Show: `/mode`, `/mode status`, `/mode <name>`, `/mode reset`
