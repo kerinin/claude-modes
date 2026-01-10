@@ -134,57 +134,57 @@ modes:
   });
 
   describe("tools/list", () => {
-    it("lists mode_status tool", async () => {
+    it("lists status tool", async () => {
       const result = (await client.request("tools/list")) as {
         tools: Array<{ name: string }>;
       };
 
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).toContain("mode_status");
+      expect(toolNames).toContain("status");
     });
 
-    it("lists mode_transition tool", async () => {
+    it("lists transition tool", async () => {
       const result = (await client.request("tools/list")) as {
         tools: Array<{ name: string }>;
       };
 
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).toContain("mode_transition");
+      expect(toolNames).toContain("transition");
     });
 
-    it("lists mode_force_transition tool", async () => {
+    it("lists force_transition tool", async () => {
       const result = (await client.request("tools/list")) as {
         tools: Array<{ name: string }>;
       };
 
       const toolNames = result.tools.map((t) => t.name);
-      expect(toolNames).toContain("mode_force_transition");
+      expect(toolNames).toContain("force_transition");
     });
 
-    it("mode_transition has required parameters", async () => {
+    it("transition has required parameters", async () => {
       const result = (await client.request("tools/list")) as {
         tools: Array<{ name: string; inputSchema: { required?: string[] } }>;
       };
 
-      const tool = result.tools.find((t) => t.name === "mode_transition");
-      expect(tool?.inputSchema.required).toContain("target_mode");
+      const tool = result.tools.find((t) => t.name === "transition");
+      expect(tool?.inputSchema.required).toContain("target");
       expect(tool?.inputSchema.required).toContain("explanation");
     });
 
-    it("mode_force_transition has required parameters", async () => {
+    it("force_transition has required parameters", async () => {
       const result = (await client.request("tools/list")) as {
         tools: Array<{ name: string; inputSchema: { required?: string[] } }>;
       };
 
-      const tool = result.tools.find((t) => t.name === "mode_force_transition");
-      expect(tool?.inputSchema.required).toContain("target_mode");
+      const tool = result.tools.find((t) => t.name === "force_transition");
+      expect(tool?.inputSchema.required).toContain("target");
     });
   });
 
-  describe("tools/call mode_status", () => {
+  describe("tools/call status", () => {
     it("returns current mode", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_status",
+        name: "status",
         arguments: {},
       })) as { content: Array<{ type: string; text: string }> };
 
@@ -195,7 +195,7 @@ modes:
 
     it("returns available transitions", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_status",
+        name: "status",
         arguments: {},
       })) as { content: Array<{ type: string; text: string }> };
 
@@ -207,7 +207,7 @@ modes:
 
     it("includes transition constraints", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_status",
+        name: "status",
         arguments: {},
       })) as { content: Array<{ type: string; text: string }> };
 
@@ -219,12 +219,12 @@ modes:
     });
   });
 
-  describe("tools/call mode_transition", () => {
+  describe("tools/call transition", () => {
     it("succeeds for valid transition with explanation", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_transition",
+        name: "transition",
         arguments: {
-          target_mode: "test-dev",
+          target: "test-dev",
           explanation: "User described a login bug",
         },
       })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
@@ -238,9 +238,9 @@ modes:
     it("fails for invalid transition", async () => {
       // From idle, cannot go directly to feature-dev
       const result = (await client.request("tools/call", {
-        name: "mode_transition",
+        name: "transition",
         arguments: {
-          target_mode: "feature-dev",
+          target: "feature-dev",
           explanation: "Trying to skip ahead",
         },
       })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
@@ -252,9 +252,9 @@ modes:
 
     it("fails for non-existent mode", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_transition",
+        name: "transition",
         arguments: {
-          target_mode: "nonexistent",
+          target: "nonexistent",
           explanation: "Testing",
         },
       })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
@@ -267,15 +267,15 @@ modes:
 
     it("records transition in history", async () => {
       await client.request("tools/call", {
-        name: "mode_transition",
+        name: "transition",
         arguments: {
-          target_mode: "test-dev",
+          target: "test-dev",
           explanation: "Starting TDD",
         },
       });
 
       const statusResult = (await client.request("tools/call", {
-        name: "mode_status",
+        name: "status",
         arguments: {},
       })) as { content: Array<{ type: string; text: string }> };
 
@@ -287,12 +287,12 @@ modes:
     });
   });
 
-  describe("tools/call mode_force_transition", () => {
+  describe("tools/call force_transition", () => {
     it("can bypass constraint rules", async () => {
       // From idle, force directly to feature-dev (normally not allowed)
       const result = (await client.request("tools/call", {
-        name: "mode_force_transition",
-        arguments: { target_mode: "feature-dev" },
+        name: "force_transition",
+        arguments: { target: "feature-dev" },
       })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
 
       expect(result.isError).toBeFalsy();
@@ -303,8 +303,8 @@ modes:
 
     it("fails for non-existent mode", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_force_transition",
-        arguments: { target_mode: "nonexistent" },
+        name: "force_transition",
+        arguments: { target: "nonexistent" },
       })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
 
       expect(result.isError).toBe(true);
@@ -314,8 +314,8 @@ modes:
 
     it("fails when already in target mode", async () => {
       const result = (await client.request("tools/call", {
-        name: "mode_force_transition",
-        arguments: { target_mode: "idle" },
+        name: "force_transition",
+        arguments: { target: "idle" },
       })) as { content: Array<{ type: string; text: string }>; isError?: boolean };
 
       expect(result.isError).toBe(true);
@@ -326,12 +326,12 @@ modes:
 
     it("records forced transition in history", async () => {
       await client.request("tools/call", {
-        name: "mode_force_transition",
-        arguments: { target_mode: "feature-dev" },
+        name: "force_transition",
+        arguments: { target: "feature-dev" },
       });
 
       const statusResult = (await client.request("tools/call", {
-        name: "mode_status",
+        name: "status",
         arguments: {},
       })) as { content: Array<{ type: string; text: string }> };
 

@@ -73,8 +73,7 @@ The constraint system makes these shortcuts impossible. Claude must satisfy each
 │  (Single process started by Claude Code via .mcp.json)          │
 │                                                                  │
 │  Interfaces:                                                     │
-│  ├─ MCP (stdio) ─► mode_status, mode_transition,                │
-│  │                 mode_force_transition                         │
+│  ├─ MCP (stdio) ─► status, transition, force_transition         │
 │  └─ HTTP (Unix socket) ─► /context, /check-tool                 │
 │                                                                  │
 │  Shared in-memory:                                               │
@@ -124,7 +123,7 @@ Claude Modes uses two enforcement layers:
 |----------|-------------|
 | Config loading | Read `modes.yaml` + `settings.{mode}.json` + `CLAUDE.{mode}.md` |
 | State management | Read/write `mode-state.json` |
-| MCP tools | Expose `mode_status`, `mode_transition`, `mode_force_transition` |
+| MCP tools | Expose `status`, `transition`, `force_transition` |
 | HTTP API | Serve endpoints for hooks (`/context`, `/check-tool`) |
 
 **Multi-Session Handling:**
@@ -138,39 +137,39 @@ The MCP server manages **per-project** state, not per-session:
 **MCP Tools:**
 
 ```typescript
-// mode_transition - Constrained mode change (requires valid transition + explanation)
+// transition - Constrained mode change (requires valid transition + explanation)
 {
-  name: "mode_transition",
+  name: "transition",
   description: "Transition to a new mode. Only transitions defined in modes.yaml are allowed.",
   inputSchema: {
     type: "object",
     properties: {
-      target_mode: { type: "string", description: "Mode to transition to" },
+      target: { type: "string", description: "Mode to transition to" },
       explanation: { type: "string", description: "Why the transition constraint is satisfied" }
     },
-    required: ["target_mode", "explanation"]
+    required: ["target", "explanation"]
   }
 }
 // Returns: { success: true, new_state } or { success: false, reason }
 
-// mode_status - Get current mode information
+// status - Get current mode information
 {
-  name: "mode_status",
+  name: "status",
   description: "Get current mode, available transitions, and recent history",
   inputSchema: { type: "object", properties: {} }
 }
 // Returns: { current_mode, available_transitions, history }
 
-// mode_force_transition - Forced mode change (skips constraint check)
+// force_transition - Forced mode change (skips constraint check)
 {
-  name: "mode_force_transition",
+  name: "force_transition",
   description: "Force transition to any mode, bypassing constraint checks. For user overrides only.",
   inputSchema: {
     type: "object",
     properties: {
-      target_mode: { type: "string", description: "Mode to transition to" }
+      target: { type: "string", description: "Mode to transition to" }
     },
-    required: ["target_mode"]
+    required: ["target"]
   }
 }
 // Returns: { success: true, new_mode } or { success: false, reason }
@@ -345,7 +344,7 @@ This creates accountability:
 
 1. **Context injection:** Every user prompt, the UserPromptSubmit hook injects current mode, available transitions, and their constraints
 2. **Self-evaluation:** Claude determines when a transition is appropriate based on the injected constraints
-3. **Explicit transition:** Claude calls `mode_transition` with target mode and explanation
+3. **Explicit transition:** Claude calls `transition` tool with target mode and explanation
 4. **State update:** MCP server updates state; subsequent prompts get new context and permissions
 
 **Example injected context:**
@@ -357,14 +356,14 @@ AVAILABLE TRANSITIONS:
   Constraint: A test exists that targets the bug/feature.
   The test has been executed and is currently failing.
 
-When you believe the constraint is satisfied, call mode_transition
+When you believe the constraint is satisfied, call the transition tool
 with your target mode and an explanation of why the constraint is met.
 ```
 
 **Example transition call:**
 ```typescript
-mode_transition({
-  target_mode: "feature-dev",
+transition({
+  target: "feature-dev",
   explanation: "Created auth.test.ts with test for 401 response. Ran 'npm test' - test fails with 'expected 401, got 200'. Ready to implement fix."
 })
 ```
@@ -390,10 +389,10 @@ Users can control the mode directly via slash commands:
 
 | Command | Instructs Claude to call |
 |---------|--------------------------|
-| `/mode` | `mode_status` tool |
-| `/mode status` | `mode_status` tool |
-| `/mode <name>` | `mode_force_transition` tool |
-| `/mode reset` | `mode_force_transition` with `target_mode: <default>` |
+| `/mode` | `status` tool |
+| `/mode status` | `status` tool |
+| `/mode <name>` | `force_transition` tool |
+| `/mode reset` | `force_transition` with `target: <default>` |
 
 ```markdown
 # .claude/commands/mode.md
@@ -407,9 +406,9 @@ Handle the /mode command for mode management.
 Arguments: $ARGUMENTS
 
 Based on the arguments:
-- No args or "status": Call the `mode_status` MCP tool and display the result
-- "reset": Call `mode_force_transition` with target_mode set to the default mode
-- "<mode-name>": Call `mode_force_transition` with the specified target_mode
+- No args or "status": Call the `status` MCP tool and display the result
+- "reset": Call `force_transition` with target set to the default mode
+- "<mode-name>": Call `force_transition` with the specified target
 - "help": Show usage: /mode, /mode status, /mode <name>, /mode reset
 ```
 
@@ -427,7 +426,7 @@ Claude Modes is distributed as a **Claude Code plugin**, providing one-command i
 ### Installation
 
 ```bash
-claude plugin install claude-modes
+/plugin install modes
 ```
 
 This installs and configures:
@@ -439,23 +438,22 @@ This installs and configures:
 ### Plugin Structure
 
 ```
-claude-modes-plugin/
-├── .claude-plugin/
-│   └── plugin.json              # Plugin manifest
-├── servers/
-│   └── mode-mcp/                # Bundled MCP server
+packages/modes/                   # Plugin directory
+├── plugin.json                   # Plugin manifest
+├── server/
+│   └── bundle.cjs                # Bundled MCP server (built from modes-server)
 ├── hooks/
-│   └── hooks.json               # Hook configurations
+│   └── hooks.json                # Hook configurations
 ├── commands/
-│   └── mode.md                  # /mode slash command
+│   ├── mode.md                   # /mode slash command
+│   └── setup.md                  # /setup slash command
 ├── examples/
-│   ├── tdd/                     # TDD mode example
-│   │   ├── modes.yaml
-│   │   ├── CLAUDE.test-dev.md
-│   │   ├── CLAUDE.feature-dev.md
-│   │   ├── settings.test-dev.json
-│   │   └── settings.feature-dev.json
-│   └── code-review/             # Code review mode example
+│   └── tdd/                      # TDD mode example
+│       ├── modes.yaml
+│       ├── CLAUDE.test-dev.md
+│       ├── CLAUDE.feature-dev.md
+│       ├── settings.test-dev.json
+│       └── settings.feature-dev.json
 └── README.md
 ```
 
@@ -463,17 +461,21 @@ claude-modes-plugin/
 
 ```json
 {
-  "name": "claude-modes",
-  "version": "1.0.0",
+  "name": "modes",
+  "version": "0.1.0",
   "description": "Modal execution for Claude Code",
+  "commands": ["commands/mode.md", "commands/setup.md"],
+  "hooks": "hooks/hooks.json",
   "mcpServers": {
-    "mode": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/servers/mode-mcp/bin/server.js",
-      "args": ["--socket", ".claude/mode.sock"]
+    "modes": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server/bundle.cjs"],
+      "env": {
+        "CLAUDE_MODES_CONFIG_DIR": "${CLAUDE_PROJECT_DIR}/.claude",
+        "CLAUDE_MODES_SOCKET": "${CLAUDE_PROJECT_DIR}/.claude/mode.sock"
+      }
     }
-  },
-  "hooks": "./hooks/hooks.json",
-  "commands": ["./commands/mode.md"]
+  }
 }
 ```
 
@@ -483,15 +485,17 @@ claude-modes-plugin/
 {
   "hooks": {
     "UserPromptSubmit": [{
+      "matcher": "",
       "hooks": [{
         "type": "command",
-        "command": "curl -s --unix-socket .claude/mode.sock http://localhost/context"
+        "command": "curl -s --unix-socket \"$CLAUDE_PROJECT_DIR/.claude/mode.sock\" http://./context 2>/dev/null || true"
       }]
     }],
     "PreToolUse": [{
+      "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "curl -s --unix-socket .claude/mode.sock -X POST http://localhost/check-tool -d @-"
+        "command": "curl -s --unix-socket \"$CLAUDE_PROJECT_DIR/.claude/mode.sock\" -X POST -d @- http://./check-tool 2>/dev/null || true"
       }]
     }]
   }
@@ -527,28 +531,30 @@ These constraints informed the design:
 
 ## Implementation Roadmap
 
-### Phase 1: MCP Server
+### Phase 1: MCP Server ✓
 - [x] Project setup (TypeScript)
 - [x] modes.yaml parsing (modes, transitions, constraints)
 - [x] Mode-specific config loading (settings.{mode}.json, CLAUDE.{mode}.md)
 - [x] State management (read/write mode-state.json)
 - [x] Unix socket HTTP API for hooks (/context, /check-tool)
-- [x] MCP tools (mode_transition, mode_status, mode_force_transition)
+- [x] MCP tools (status, transition, force_transition)
 
-### Phase 2: Plugin Structure
-- [ ] Plugin manifest (plugin.json)
-- [ ] Hook configurations (hooks.json)
+### Phase 2: Plugin Structure ✓
+- [x] Plugin manifest (plugin.json)
+- [x] Hook configurations (hooks.json)
 - [x] /mode slash command
-- [ ] Bundle MCP server in plugin
+- [x] Bundle MCP server in plugin (esbuild → bundle.cjs)
+- [x] Build automation (npm run bundle)
 
 ### Phase 3: Example Modes
-- [x] TDD mode (modes.yaml, CLAUDE.*.md, settings.*.json) - in test-project/
+- [x] TDD mode (modes.yaml, CLAUDE.*.md, settings.*.json)
 - [ ] Code review mode
 - [ ] Documentation
 
 ### Phase 4: Testing & Release
-- [ ] End-to-end testing with real tasks
-- [ ] Iterate on context injection format
+- [x] Unit tests for all components
+- [x] E2E tests for MCP server
+- [ ] End-to-end testing with real workflows
 - [ ] Plugin marketplace setup
 - [ ] Release v1.0
 
@@ -572,6 +578,7 @@ These constraints informed the design:
 
 ## Open Questions
 
-1. ~~**Transition history:** Log all transitions for audit? Could help debug mode issues.~~ **Resolved:** Yes, transitions are logged in `mode-state.json` history array. `mode_status` returns recent history.
-2. **Context format:** What's the ideal format for injected mode context? Need to test what Claude responds to best.
-3. ~~**Server consolidation:** Currently MCP server (stdio) and HTTP server (Unix socket) are separate processes. Should these be consolidated into one process that handles both?~~ **Resolved:** Yes, consolidated into single `combined-server.ts`.
+1. ~~**Transition history:** Log all transitions for audit?~~ **Resolved:** Yes, transitions are logged in `mode-state.json` history array. `status` tool returns recent history.
+2. ~~**Context format:** What's the ideal format for injected mode context?~~ **Resolved:** Context renderer outputs structured text with mode, instructions, transitions, and guidance.
+3. ~~**Server consolidation:** Should MCP server and HTTP server be consolidated?~~ **Resolved:** Yes, consolidated into single `combined-server.ts`.
+4. ~~**Plugin auto-approve:** Can plugins auto-approve their own tools?~~ **Resolved:** No, this is a security design decision. Users must configure permissions in `.claude/settings.json`.
