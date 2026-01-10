@@ -108,7 +108,7 @@ export interface LoadedModeConfig {
   permissions: ModePermissions | null;
 }
 
-export interface ConfigLoadResult {
+export type ConfigLoadResult = {
   success: true;
   config: WorkflowConfig;
   modeConfigs: Record<string, LoadedModeConfig>;

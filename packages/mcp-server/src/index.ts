@@ -1,29 +1,41 @@
 #!/usr/bin/env node
 
-import { ConfigLoader } from "./config.js";
-import { StateManager } from "./state.js";
-import { HttpServer } from "./http-server.js";
-import { McpServer } from "./mcp-server.js";
+import * as path from "path";
+import { createServer } from "./server.js";
 
 async function main() {
-  // TODO: Parse CLI args (--socket path)
-  const socketPath = process.argv[2] || ".claude/mode.sock";
+  // Config directory - defaults to .claude in current working directory
+  const configDir = process.env.CLAUDE_MODES_CONFIG_DIR || path.join(process.cwd(), ".claude");
 
-  // Load configuration
-  const config = new ConfigLoader();
-  await config.load();
+  // Socket path - defaults to .claude/mode.sock
+  const socketPath = process.env.CLAUDE_MODES_SOCKET || process.argv[2] || path.join(configDir, "mode.sock");
 
-  // Initialize state manager
-  const state = new StateManager(config);
-  await state.load();
+  console.log(`Starting Claude Modes server...`);
+  console.log(`  Config dir: ${configDir}`);
+  console.log(`  Socket: ${socketPath}`);
 
-  // Start HTTP server for hooks
-  const httpServer = new HttpServer(config, state);
-  await httpServer.start(socketPath);
+  const server = createServer({
+    configDir,
+    socketPath,
+  });
 
-  // Start MCP server for tool exposure
-  const mcpServer = new McpServer(config, state);
-  await mcpServer.start();
+  // Handle graceful shutdown
+  process.on("SIGINT", async () => {
+    console.log("\nShutting down...");
+    await server.stop();
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", async () => {
+    await server.stop();
+    process.exit(0);
+  });
+
+  await server.start();
+  console.log(`Server listening on ${socketPath}`);
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});

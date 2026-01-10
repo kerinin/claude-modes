@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "MCP server for Claude Modes",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/combined-server.js",
   "bin": {
-    "claude-modes-mcp": "dist/index.js"
+    "claude-modes-mcp": "dist/combined-server.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/index.js",
+    "start": "node dist/combined-server.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

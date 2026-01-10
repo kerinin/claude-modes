@@ -63,5 +63,12 @@ export function renderContext(data: ContextData | null): string {
     );
   }
 
+  // Add general mode guidance
+  sections.push(
+    "MODE GUIDANCE: If an action is blocked by mode permissions, briefly explain " +
+      "the constraint. Do not suggest mode transitions - you can only transition when " +
+      "constraints are met. The user can force a mode change with /mode <name> if needed."
+  );
+
   return sections.join("\n\n");
 }

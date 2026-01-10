@@ -69,30 +69,36 @@ The constraint system makes these shortcuts impossible. Claude must satisfy each
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                       Mode MCP Server                            │
-│  (Long-running process, started by Claude Code via .mcp.json)   │
+│                    Combined Mode Server                          │
+│  (Single process started by Claude Code via .mcp.json)          │
 │                                                                  │
-│  Responsibilities:                                               │
-│  ├─ Load modes.yaml (state machine topology)                    │
-│  ├─ Load mode-specific config (settings.{mode}.json, etc.)      │
-│  ├─ Manage mode-state.json (per-project state)                  │
-│  ├─ Expose MCP tool (mode_transition)                           │
-│  └─ Serve HTTP API for hooks                                    │
+│  Interfaces:                                                     │
+│  ├─ MCP (stdio) ─► mode_status, mode_transition,                │
+│  │                 mode_force_transition                         │
+│  └─ HTTP (Unix socket) ─► /context, /check-tool                 │
+│                                                                  │
+│  Shared in-memory:                                               │
+│  ├─ Config (modes.yaml, settings.{mode}.json, CLAUDE.{mode}.md) │
+│  └─ State (mode-state.json)                                      │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
-                ┌──────────┴──────────┐
-                │                     │
-                ▼                     ▼
-         ┌───────────┐         ┌───────────┐
-         │UserPrompt │         │PreToolUse │
-         │Submit Hook│         │   Hook    │
-         └───────────┘         └───────────┘
-                │                     │
-                │                     │
-          Inject mode            Enforce mode
-          context +             permissions
-          constraints
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
+    ┌───────────┐   ┌───────────┐   ┌───────────┐
+    │  Claude   │   │UserPrompt │   │PreToolUse │
+    │ (tools)   │   │Submit Hook│   │   Hook    │
+    └───────────┘   └───────────┘   └───────────┘
+          │                │                │
+          │                │                │
+     Call MCP         Inject mode      Enforce mode
+     tools            context          permissions
 ```
+
+**Single process benefits:**
+- Shared config loaded once
+- No race conditions on state file
+- Simpler deployment and debugging
 
 Claude Modes uses two enforcement layers:
 1. **Context injection** via UserPromptSubmit - Claude always sees current mode and transition constraints
@@ -102,11 +108,15 @@ Claude Modes uses two enforcement layers:
 
 ## Components
 
-### 1. MCP Server (`claude-mode-mcp`)
+### 1. Mode Server (`claude-modes-mcp`)
 
-**Distribution:** npm package (`npx claude-mode-mcp`)
+**Distribution:** npm package (`npx claude-modes-mcp`)
 
 **Startup:** Configured in `.mcp.json`, started automatically by Claude Code
+
+**Implementation:** Single process (`combined-server.ts`) that handles both interfaces:
+- MCP tools via stdio (for Claude to call)
+- HTTP API via Unix socket (for hooks)
 
 **Responsibilities:**
 
@@ -114,8 +124,8 @@ Claude Modes uses two enforcement layers:
 |----------|-------------|
 | Config loading | Read `modes.yaml` + `settings.{mode}.json` + `CLAUDE.{mode}.md` |
 | State management | Read/write `mode-state.json` |
-| MCP tool | Expose `mode_transition` |
-| HTTP API | Serve endpoints for hooks (low latency, config cached in memory) |
+| MCP tools | Expose `mode_status`, `mode_transition`, `mode_force_transition` |
+| HTTP API | Serve endpoints for hooks (`/context`, `/check-tool`) |
 
 **Multi-Session Handling:**
 
@@ -125,41 +135,59 @@ The MCP server manages **per-project** state, not per-session:
 - Multiple sessions see and can modify the same mode state
 - State file uses atomic writes to prevent corruption from concurrent access
 
-**MCP Tool:**
+**MCP Tools:**
 
 ```typescript
-// mode_transition - Request mode change
+// mode_transition - Constrained mode change (requires valid transition + explanation)
 {
   name: "mode_transition",
-  description: "Transition to a new mode",
+  description: "Transition to a new mode. Only transitions defined in modes.yaml are allowed.",
   inputSchema: {
     type: "object",
     properties: {
       target_mode: { type: "string", description: "Mode to transition to" },
-      explanation: { type: "string", description: "Why this transition is justified" }
+      explanation: { type: "string", description: "Why the transition constraint is satisfied" }
     },
     required: ["target_mode", "explanation"]
+  }
+}
+// Returns: { success: true, new_state } or { success: false, reason }
+
+// mode_status - Get current mode information
+{
+  name: "mode_status",
+  description: "Get current mode, available transitions, and recent history",
+  inputSchema: { type: "object", properties: {} }
+}
+// Returns: { current_mode, available_transitions, history }
+
+// mode_force_transition - Forced mode change (skips constraint check)
+{
+  name: "mode_force_transition",
+  description: "Force transition to any mode, bypassing constraint checks. For user overrides only.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      target_mode: { type: "string", description: "Mode to transition to" }
+    },
+    required: ["target_mode"]
   }
 }
 // Returns: { success: true, new_mode } or { success: false, reason }
 ```
 
-**HTTP API (for hooks):**
+**HTTP API (for hooks only):**
 
-The MCP server exposes an HTTP API via Unix domain socket (not TCP port) to avoid conflicts when running multiple projects:
+The MCP server exposes an HTTP API via Unix domain socket for hook communication:
 
 ```
 Socket: .claude/mode.sock
 
-# For hooks
-GET  /context            - Get current mode context for injection
-POST /check-tool         - Check if tool allowed in current mode
-
-# For user control (/mode command)
-GET  /status             - Current mode + available transitions (human-readable)
-POST /force-transition   - Transition without constraint check
-POST /reset              - Return to default mode
+GET  /context            - Get current mode context for injection (UserPromptSubmit)
+POST /check-tool         - Check if tool allowed in current mode (PreToolUse)
 ```
+
+User control (`/mode` commands) goes through MCP tools, not HTTP endpoints. This keeps all mode operations going through the same MCP interface.
 
 Using a Unix socket ensures each project's MCP server is isolated - no port conflicts when working on multiple projects simultaneously.
 
@@ -350,7 +378,7 @@ mode_transition({
 
 ## User Control
 
-Users can control the mode directly via slash commands, independent of Claude:
+Users can control the mode directly via slash commands:
 
 ```
 /mode              # Show current mode + available transitions
@@ -358,40 +386,37 @@ Users can control the mode directly via slash commands, independent of Claude:
 /mode reset        # Return to default mode
 ```
 
-**Implementation:** Custom slash command (`.claude/commands/mode.md`) that calls the MCP server directly:
+**Implementation:** Slash commands in Claude Code are prompt shortcuts - Markdown files in `.claude/commands/` that instruct Claude what to do. The `/mode` commands are alternate entrypoints to the MCP tools:
+
+| Command | Instructs Claude to call |
+|---------|--------------------------|
+| `/mode` | `mode_status` tool |
+| `/mode status` | `mode_status` tool |
+| `/mode <name>` | `mode_force_transition` tool |
+| `/mode reset` | `mode_force_transition` with `target_mode: <default>` |
 
 ```markdown
 # .claude/commands/mode.md
 
 ---
 description: Control mode state
-allowed-tools: Bash
 ---
 
-Check or change the current mode.
+Handle the /mode command for mode management.
 
-Usage:
-- /mode - show current mode
-- /mode <mode> - force transition to mode
-- /mode reset - return to default mode
+Arguments: $ARGUMENTS
 
-Use curl to call the mode MCP server:
-curl -s --unix-socket .claude/mode.sock http://localhost/status
+Based on the arguments:
+- No args or "status": Call the `mode_status` MCP tool and display the result
+- "reset": Call `mode_force_transition` with target_mode set to the default mode
+- "<mode-name>": Call `mode_force_transition` with the specified target_mode
+- "help": Show usage: /mode, /mode status, /mode <name>, /mode reset
 ```
 
-**MCP Server endpoint for user control:**
-
-```
-GET  /status                    # Current mode + available transitions
-POST /force-transition          # Transition without constraint check
-     { "target_mode": "..." }
-POST /reset                     # Return to default mode
-```
-
-**Why separate from Claude's transition:**
-- Claude uses `mode_transition` tool with explanation and constraint awareness
-- Users use `/mode` command for direct control without justification
-- Both update the same state file
+**Key design decision:** Slash commands instruct Claude to call MCP tools rather than hitting HTTP endpoints directly. This ensures:
+- Consistent behavior between programmatic and user-invoked mode changes
+- MCP tool permissions control access to forced transitions
+- All mode operations go through the same code path
 
 ---
 
@@ -503,21 +528,21 @@ These constraints informed the design:
 ## Implementation Roadmap
 
 ### Phase 1: MCP Server
-- [ ] Project setup (TypeScript)
-- [ ] modes.yaml parsing (modes, transitions, constraints)
-- [ ] Mode-specific config loading (settings.{mode}.json, CLAUDE.{mode}.md)
-- [ ] State management (read/write mode-state.json)
-- [ ] Unix socket HTTP API (/context, /check-tool, /status, /force-transition, /reset)
-- [ ] MCP tool (mode_transition)
+- [x] Project setup (TypeScript)
+- [x] modes.yaml parsing (modes, transitions, constraints)
+- [x] Mode-specific config loading (settings.{mode}.json, CLAUDE.{mode}.md)
+- [x] State management (read/write mode-state.json)
+- [x] Unix socket HTTP API for hooks (/context, /check-tool)
+- [x] MCP tools (mode_transition, mode_status, mode_force_transition)
 
 ### Phase 2: Plugin Structure
 - [ ] Plugin manifest (plugin.json)
 - [ ] Hook configurations (hooks.json)
-- [ ] /mode slash command
+- [x] /mode slash command
 - [ ] Bundle MCP server in plugin
 
 ### Phase 3: Example Modes
-- [ ] TDD mode (modes.yaml, CLAUDE.*.md, settings.*.json)
+- [x] TDD mode (modes.yaml, CLAUDE.*.md, settings.*.json) - in test-project/
 - [ ] Code review mode
 - [ ] Documentation
 
@@ -547,5 +572,6 @@ These constraints informed the design:
 
 ## Open Questions
 
-1. **Transition history:** Log all transitions for audit? Could help debug mode issues.
+1. ~~**Transition history:** Log all transitions for audit? Could help debug mode issues.~~ **Resolved:** Yes, transitions are logged in `mode-state.json` history array. `mode_status` returns recent history.
 2. **Context format:** What's the ideal format for injected mode context? Need to test what Claude responds to best.
+3. ~~**Server consolidation:** Currently MCP server (stdio) and HTTP server (Unix socket) are separate processes. Should these be consolidated into one process that handles both?~~ **Resolved:** Yes, consolidated into single `combined-server.ts`.
