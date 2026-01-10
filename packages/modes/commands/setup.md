@@ -1,12 +1,10 @@
 ---
-description: Set up modes plugin in the current project
+description: Set up modes plugin permissions
 ---
 
-Set up the modes plugin in this project by creating the required configuration files.
+Set up auto-approval for modes plugin tools.
 
-Create the following files if they don't exist:
-
-1. **`.claude/settings.json`** (create or merge with existing) for auto-approval:
+Create or update `.claude/settings.json` to include:
 ```json
 {
   "permissions": {
@@ -18,11 +16,8 @@ Create the following files if they don't exist:
 }
 ```
 
-2. Copy the TDD example modes if no modes.yaml exists:
-   - `.claude/modes.yaml`
-   - `.claude/CLAUDE.test-dev.md`
-   - `.claude/CLAUDE.feature-dev.md`
-   - `.claude/settings.test-dev.json`
-   - `.claude/settings.feature-dev.json`
+If the file already exists, merge these permissions with existing ones.
 
-The MCP server is provided by the plugin automatically.
+After setup, tell the user:
+- Permissions configured for modes plugin
+- To configure workflows, create `.claude/modes.yaml` (see plugin examples)
