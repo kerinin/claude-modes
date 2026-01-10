@@ -2,7 +2,7 @@
   "name": "modes",
   "version": "0.1.0",
   "description": "Modal execution for Claude Code - enforce workflows like TDD by limiting actions based on current mode",
-  "author": "Anthropic",
+  "author": "Ryan Michael",
   "repository": "https://github.com/anthropics/claude-modes",
   "commands": ["commands/mode.md", "commands/setup.md"],
   "hooks": "hooks/hooks.json",
