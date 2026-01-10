@@ -1,0 +1,20 @@
+name: tdd-workflow
+default: idle
+
+modes:
+  idle:
+    transitions:
+      - to: test-dev
+        constraint: User has described a bug or feature to work on
+
+  test-dev:
+    transitions:
+      - to: feature-dev
+        constraint: |
+          A test exists that targets the bug/feature.
+          The test has been executed and is currently failing.
+
+  feature-dev:
+    transitions:
+      - to: idle
+        constraint: All tests are passing.

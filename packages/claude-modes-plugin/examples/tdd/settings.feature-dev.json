@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Write(src/**)",
+      "Edit(src/**)",
+      "Bash(npm test*)",
+      "Bash(npx vitest*)"
+    ],
+    "deny": [
+      "Write({test/**,**/*.test.ts,**/*.spec.ts})",
+      "Edit({test/**,**/*.test.ts,**/*.spec.ts})"
+    ]
+  }
+}

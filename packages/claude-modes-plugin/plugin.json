@@ -1,0 +1,19 @@
+{
+  "name": "claude-modes",
+  "version": "0.1.0",
+  "description": "Modal execution for Claude Code - enforce workflows like TDD by limiting actions based on current mode",
+  "author": "Anthropic",
+  "repository": "https://github.com/anthropics/claude-modes",
+  "commands": ["commands/mode.md", "commands/setup.md"],
+  "hooks": "hooks/hooks.json",
+  "mcpServers": {
+    "mode": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/claude-modes-mcp/bundle.cjs"],
+      "env": {
+        "CLAUDE_MODES_CONFIG_DIR": "${CLAUDE_PROJECT_DIR}/.claude",
+        "CLAUDE_MODES_SOCKET": "${CLAUDE_PROJECT_DIR}/.claude/mode.sock"
+      }
+    }
+  }
+}
