@@ -29969,14 +29969,14 @@ async function main() {
   }
   function startMcpServer() {
     const server = new Server(
-      { name: "claude-modes", version: "0.1.0" },
+      { name: "modes", version: "0.1.0" },
       { capabilities: { tools: {} } }
     );
     server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
           {
-            name: "mode_status",
+            name: "status",
             description: "Get current mode, available transitions, and recent history",
             inputSchema: {
               type: "object",
@@ -29984,12 +29984,12 @@ async function main() {
             }
           },
           {
-            name: "mode_transition",
+            name: "transition",
             description: "Transition to a new mode. Only transitions defined in modes.yaml are allowed.",
             inputSchema: {
               type: "object",
               properties: {
-                target_mode: {
+                target: {
                   type: "string",
                   description: "Mode to transition to"
                 },
@@ -29998,21 +29998,21 @@ async function main() {
                   description: "Why the transition constraint is satisfied"
                 }
               },
-              required: ["target_mode", "explanation"]
+              required: ["target", "explanation"]
             }
           },
           {
-            name: "mode_force_transition",
+            name: "force_transition",
             description: "Force transition to any mode, bypassing constraint checks. For user overrides only.",
             inputSchema: {
               type: "object",
               properties: {
-                target_mode: {
+                target: {
                   type: "string",
                   description: "Mode to transition to"
                 }
               },
-              required: ["target_mode"]
+              required: ["target"]
             }
           }
         ]
@@ -30021,17 +30021,17 @@ async function main() {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
       switch (name) {
-        case "mode_status": {
+        case "status": {
           const result = modeStatus(stateFilePath, config2);
           return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
           };
         }
-        case "mode_transition": {
-          const targetMode = args?.target_mode;
+        case "transition": {
+          const target = args?.target;
           const explanation = args?.explanation;
           const result = executeTransition(
-            { target_state: targetMode, explanation },
+            { target_state: target, explanation },
             stateFilePath,
             config2
           );
@@ -30040,10 +30040,10 @@ async function main() {
             isError: !result.success
           };
         }
-        case "mode_force_transition": {
-          const targetMode = args?.target_mode;
+        case "force_transition": {
+          const target = args?.target;
           const result = modeForceTransition(
-            { target_mode: targetMode },
+            { target_mode: target },
             stateFilePath,
             config2
           );

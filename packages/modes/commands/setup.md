@@ -1,8 +1,8 @@
 ---
-description: Set up claude-modes in the current project
+description: Set up modes plugin in the current project
 ---
 
-Set up the claude-modes plugin in this project by creating the required configuration files.
+Set up the modes plugin in this project by creating the required configuration files.
 
 Create the following files if they don't exist:
 
@@ -11,8 +11,8 @@ Create the following files if they don't exist:
 {
   "permissions": {
     "allow": [
-      "mcp__mode__mode_status",
-      "mcp__mode__mode_transition"
+      "mcp__modes__status",
+      "mcp__modes__transition"
     ]
   }
 }

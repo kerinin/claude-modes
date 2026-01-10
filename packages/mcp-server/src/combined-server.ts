@@ -149,7 +149,7 @@ async function main() {
 
   function startMcpServer(): Server {
     const server = new Server(
-      { name: "claude-modes", version: "0.1.0" },
+      { name: "modes", version: "0.1.0" },
       { capabilities: { tools: {} } }
     );
 
@@ -158,7 +158,7 @@ async function main() {
       return {
         tools: [
           {
-            name: "mode_status",
+            name: "status",
             description:
               "Get current mode, available transitions, and recent history",
             inputSchema: {
@@ -167,13 +167,13 @@ async function main() {
             },
           },
           {
-            name: "mode_transition",
+            name: "transition",
             description:
               "Transition to a new mode. Only transitions defined in modes.yaml are allowed.",
             inputSchema: {
               type: "object" as const,
               properties: {
-                target_mode: {
+                target: {
                   type: "string",
                   description: "Mode to transition to",
                 },
@@ -182,22 +182,22 @@ async function main() {
                   description: "Why the transition constraint is satisfied",
                 },
               },
-              required: ["target_mode", "explanation"],
+              required: ["target", "explanation"],
             },
           },
           {
-            name: "mode_force_transition",
+            name: "force_transition",
             description:
               "Force transition to any mode, bypassing constraint checks. For user overrides only.",
             inputSchema: {
               type: "object" as const,
               properties: {
-                target_mode: {
+                target: {
                   type: "string",
                   description: "Mode to transition to",
                 },
               },
-              required: ["target_mode"],
+              required: ["target"],
             },
           },
         ],
@@ -209,20 +209,19 @@ async function main() {
       const { name, arguments: args } = request.params;
 
       switch (name) {
-        case "mode_status": {
+        case "status": {
           const result = modeStatus(stateFilePath, config);
           return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           };
         }
 
-        case "mode_transition": {
-          const targetMode = (args as Record<string, unknown>)
-            ?.target_mode as string;
+        case "transition": {
+          const target = (args as Record<string, unknown>)?.target as string;
           const explanation = (args as Record<string, unknown>)
             ?.explanation as string;
           const result = executeTransition(
-            { target_state: targetMode, explanation },
+            { target_state: target, explanation },
             stateFilePath,
             config
           );
@@ -232,11 +231,10 @@ async function main() {
           };
         }
 
-        case "mode_force_transition": {
-          const targetMode = (args as Record<string, unknown>)
-            ?.target_mode as string;
+        case "force_transition": {
+          const target = (args as Record<string, unknown>)?.target as string;
           const result = modeForceTransition(
-            { target_mode: targetMode },
+            { target_mode: target },
             stateFilePath,
             config
           );

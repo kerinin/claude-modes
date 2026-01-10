@@ -1,11 +1,11 @@
-# Claude Modes Plugin
+# Modes Plugin
 
 Modal execution for Claude Code - enforce workflows like TDD by limiting actions based on current mode.
 
 ## Installation
 
 ```
-/plugin install claude-modes
+/plugin install modes
 ```
 
 ## Setup
@@ -15,7 +15,7 @@ Modal execution for Claude Code - enforce workflows like TDD by limiting actions
 Copy the example TDD configuration:
 
 ```bash
-cp -r ~/.claude/plugins/claude-modes/examples/tdd/* .claude/
+cp -r ~/.claude/plugins/modes/examples/tdd/* .claude/
 ```
 
 Or create your own `modes.yaml` in `.claude/`:
@@ -28,14 +28,14 @@ Add to `.claude/settings.json` to skip permission prompts:
 {
   "permissions": {
     "allow": [
-      "mcp__mode__mode_status",
-      "mcp__mode__mode_transition"
+      "mcp__modes__status",
+      "mcp__modes__transition"
     ]
   }
 }
 ```
 
-Note: `mode_force_transition` intentionally requires approval for safety.
+Note: `force_transition` intentionally requires approval for safety.
 
 ### Creating Custom Modes
 
