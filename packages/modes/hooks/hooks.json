@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s --unix-socket \"$CLAUDE_PROJECT_DIR/.claude/mode.sock\" http://localhost/context 2>/dev/null || true"
+            "command": "curl -s --unix-socket \"$CLAUDE_PROJECT_DIR/.claude/mode.sock\" http://./context 2>/dev/null || true"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s --unix-socket \"$CLAUDE_PROJECT_DIR/.claude/mode.sock\" -X POST -d @- http://localhost/check-tool 2>/dev/null || true"
+            "command": "curl -s --unix-socket \"$CLAUDE_PROJECT_DIR/.claude/mode.sock\" -X POST -d @- http://./check-tool 2>/dev/null || true"
           }
         ]
       }

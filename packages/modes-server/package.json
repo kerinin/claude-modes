@@ -1,14 +1,15 @@
 {
-  "name": "claude-modes-mcp",
+  "name": "modes-server",
   "version": "0.1.0",
-  "description": "MCP server for Claude Modes",
+  "description": "MCP server for modes plugin",
   "type": "module",
   "main": "dist/combined-server.js",
   "bin": {
-    "claude-modes-mcp": "dist/combined-server.js"
+    "modes-server": "dist/combined-server.js"
   },
   "scripts": {
     "build": "tsc",
+    "bundle": "npm run build && npx esbuild src/combined-server.ts --bundle --platform=node --target=node18 --format=cjs --outfile=../modes/server/bundle.cjs",
     "dev": "tsc --watch",
     "start": "node dist/combined-server.js",
     "test": "vitest run",
@@ -23,6 +24,7 @@
     "@types/node": "^20.10.0",
     "@types/picomatch": "^4.0.2",
     "@vitest/coverage-v8": "^4.0.16",
+    "esbuild": "^0.24.0",
     "typescript": "^5.3.0",
     "vitest": "^4.0.16"
   }
