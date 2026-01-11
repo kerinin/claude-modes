@@ -42,80 +42,154 @@ This config restricts `test-dev` to test files only, `feature-dev` to source fil
 /plugin install modes@claude-modes
 ```
 
+Then run `/modes:setup` to configure permissions. This adds the modes MCP tools to your allow list so Claude can check and update mode state without prompting you each time.
+
 ## Setup
 
-### 1. Configure Your Modes
+### Quick Start
 
-Copy the example TDD configuration:
+Copy the example TDD workflow to your project:
 
 ```bash
 cp -r ~/.claude/plugins/modes/examples/tdd/* .claude/
 ```
 
-Or create your own `modes.yaml` in `.claude/`:
+This gives you a working TDD workflow out of the box. Read on to understand what each file does and how to customize it.
 
-### 2. Auto-approve Mode Tools (Optional)
+### Configuration Files
 
-Add to `.claude/settings.json` to skip permission prompts:
+All config lives in your project's `.claude/` directory. There are three types of files:
 
-```json
-{
-  "permissions": {
-    "allow": [
-      "mcp__modes__status",
-      "mcp__modes__transition"
-    ]
-  }
-}
-```
+#### `modes.yaml` - The Workflow Definition
 
-Note: `force_transition` intentionally requires approval for safety.
-
-### Creating Custom Modes
+This is your state machine. It defines what modes exist and when Claude can move between them.
 
 ```yaml
-name: my-workflow
+name: tdd-workflow
 default: idle
 
 modes:
   idle:
     transitions:
-      - to: working
-        constraint: User has described a task
+      - to: test-dev
+        constraint: User has described a bug or feature to work on
 
-  working:
+  test-dev:
+    transitions:
+      - to: feature-dev
+        constraint: |
+          A test exists that targets the bug/feature.
+          The test has been executed and is currently failing.
+
+  feature-dev:
     transitions:
       - to: idle
-        constraint: Task is complete
+        constraint: All tests are passing.
 ```
+
+The `constraint` is shown to Claude and guides when it should transition. Claude evaluates whether the constraint is satisfied and calls the transition tool when ready.
+
+#### `CLAUDE.<mode>.md` - Mode Instructions
+
+These are injected into Claude's context when in that mode. Use them to focus Claude's attention and remind it what phase it's in.
+
+```markdown
+<!-- CLAUDE.test-dev.md -->
+You are writing a failing test. Focus on:
+1. Understanding the expected behavior
+2. Writing a test that verifies that behavior
+3. Running the test to confirm it fails
+
+Do NOT modify implementation code in this mode.
+```
+
+These instructions survive context compaction because they're re-injected on every prompt.
+
+#### `settings.<mode>.json` - Mode Permissions
+
+These enforce what Claude can actually do. The `allow` and `deny` lists use glob patterns to control file access.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write({test/**,**/*.test.ts})",
+      "Edit({test/**,**/*.test.ts})",
+      "Bash(npm test*)"
+    ],
+    "deny": [
+      "Write(src/**)",
+      "Edit(src/**)"
+    ]
+  }
+}
+```
+
+This is the enforcement layer. Even if Claude tries to edit a source file in `test-dev` mode, the hook will block it.
+
+**Permissions are optional.** If you just want transitions as guideposts without hard enforcement, skip the settings files entirely.
 
 ## Usage
 
-### Slash Commands
+### How It Works in Practice
 
-- `/modes:mode` - Show current mode and available transitions
-- `/modes:mode <name>` - Force transition to a mode (requires approval)
-- `/modes:mode reset` - Return to default mode
-- `/modes:setup` - Configure auto-approval permissions
+Once configured, modes work automatically. Here's what a TDD session might look like:
 
-### Automatic Behavior
+```
+You: Fix the bug where users can't log in with email addresses containing a plus sign
 
-- **Context injection**: Every prompt shows current mode and constraints
-- **Permission enforcement**: Tools blocked by mode permissions are automatically denied
+Claude: I'll help fix that login bug. Let me first write a test to verify the issue.
+        [MODE: idle → test-dev]
 
-## Configuration Files
+        Creating test for plus sign in email...
+        [Creates test/auth.test.ts]
 
-Place these in your project's `.claude/` directory:
+        Running the test to confirm it fails...
+        [Runs: npm test]
 
-| File | Purpose |
-|------|---------|
-| `modes.yaml` | Define modes and transition constraints |
-| `CLAUDE.<mode>.md` | Instructions for each mode |
-| `settings.<mode>.json` | Tool permissions for each mode |
+        Test fails as expected. Now I'll implement the fix.
+        [MODE: test-dev → feature-dev]
 
-## Example: TDD Workflow
+        [Edits src/auth.ts to fix email parsing]
 
-See `examples/tdd/` for a complete Test-Driven Development workflow with:
-- `idle` → `test-dev` → `feature-dev` → `idle` cycle
-- Test files only editable in test-dev mode
-- Source files only editable in feature-dev mode
+        Running tests to verify the fix...
+        [Runs: npm test]
+
+        All tests pass.
+        [MODE: feature-dev → idle]
+
+You: Great, thanks!
+```
+
+**What's happening behind the scenes:**
+
+1. **Context injection** - Every prompt, Claude sees the current mode, its instructions, and available transitions. This is why Claude knows to start with a test.
+
+2. **Permission enforcement** - In `test-dev`, if Claude tried to edit `src/auth.ts`, the hook would block it. Claude literally can't skip ahead.
+
+3. **Transition gating** - Claude can't move to `feature-dev` until it's written and run a failing test. The constraint is visible, so Claude knows what it needs to do.
+
+4. **State persistence** - Even if the conversation compacts and loses earlier messages, the mode state persists. Claude stays in `feature-dev` until tests pass.
+
+### Escape Hatches
+
+Sometimes you need to override the workflow. The slash commands let you intervene:
+
+- `/modes:mode` - Check current mode and available transitions
+- `/modes:mode <name>` - Force transition to a specific mode (requires approval)
+- `/modes:mode reset` - Return to the default mode
+
+Force transitions require explicit approval because they bypass the constraint system. This is intentional - the workflow should guide normal operation, with manual overrides as the exception.
+
+## Example Workflows
+
+The `examples/` directory includes:
+
+**TDD Workflow** (`examples/tdd/`)
+- `idle` → `test-dev` → `feature-dev` → `idle`
+- Test files only editable in test-dev
+- Source files only editable in feature-dev
+- Ensures red-green-refactor cycle
+
+You can create workflows for other processes: design-first development, code review gates, documentation-driven development, or anything else with sequential phases and constraints.
