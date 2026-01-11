@@ -2,6 +2,34 @@
 
 Modal execution for Claude Code - enforce workflows like TDD by limiting actions based on current mode.
 
+## The Problem
+
+Claude Code is great at completing tasks, but it often takes shortcuts. Ask it to do TDD and it might:
+- Jump straight to implementation without writing a test
+- Modify your test file while "fixing" a bug
+- Skip the red-green-refactor cycle entirely
+
+You can remind Claude to follow the process, but those instructions get lost during context compaction. There's no enforcement - just hope.
+
+## The Solution
+
+Modes creates a state machine for your workflow. Each mode defines:
+- **What Claude can do** - file permissions, tool access
+- **When Claude can move on** - transition constraints that must be satisfied
+
+```
+idle ──────────► test-dev ──────────► feature-dev ──────────► idle
+     "describe a       "test exists        "all tests
+      bug/feature"      and fails"          pass"
+```
+
+In `test-dev` mode, Claude can edit test files but not source files. It can't move to `feature-dev` until a failing test exists. In `feature-dev`, it can edit source but not tests. It can't return to `idle` until tests pass.
+
+**Why this works:**
+- Mode state survives context compaction (injected every prompt)
+- Permissions are enforced by hooks, not just instructions
+- Constraints are visible to Claude, guiding rather than just blocking
+
 ## Installation
 
 ```
