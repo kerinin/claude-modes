@@ -13,9 +13,13 @@ You can remind Claude to follow the process, but those instructions get lost dur
 
 ## The Solution
 
-Modes creates a state machine for your workflow. Each mode defines:
-- **What Claude can do** - file permissions, tool access
-- **When Claude can move on** - transition constraints that must be satisfied
+Define your own workflow as a state machine. You create modes with:
+- **Permissions** - what files/tools Claude can use in each mode
+- **Transition constraints** - conditions for moving between modes
+
+You decide what works for you. Want strict TDD? Lock down source files until tests fail. Prefer a lighter touch? Skip permissions and just use transitions as guideposts.
+
+**Example: a TDD workflow**
 
 ```
 idle ──────────► test-dev ──────────► feature-dev ──────────► idle
@@ -23,12 +27,13 @@ idle ──────────► test-dev ──────────�
       bug/feature"      and fails"          pass"
 ```
 
-In `test-dev` mode, Claude can edit test files but not source files. It can't move to `feature-dev` until a failing test exists. In `feature-dev`, it can edit source but not tests. It can't return to `idle` until tests pass.
+This config restricts `test-dev` to test files only, `feature-dev` to source files only. But that's just one approach - your `modes.yaml` defines whatever workflow fits your process.
 
 **Why this works:**
 - Mode state survives context compaction (injected every prompt)
-- Permissions are enforced by hooks, not just instructions
-- Constraints are visible to Claude, guiding rather than just blocking
+- Permissions enforced by hooks, not just instructions
+- Constraints visible to Claude, guiding rather than just blocking
+- Fully customizable to match how you actually work
 
 ## Installation
 
