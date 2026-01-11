@@ -184,15 +184,37 @@ Force transitions require explicit approval because they bypass the constraint s
 
 ## Example Workflows
 
-The `examples/` directory includes:
+The `examples/` directory includes a TDD workflow. Here are other workflows where modes shine:
 
-**TDD Workflow** (`examples/tdd/`)
-- `idle` → `test-dev` → `feature-dev` → `idle`
-- Test files only editable in test-dev
-- Source files only editable in feature-dev
-- Ensures red-green-refactor cycle
+### Test-Driven Development
 
-You can create workflows for other processes: design-first development, code review gates, documentation-driven development, or anything else with sequential phases and constraints.
+**The problem:** Claude jumps straight to implementation, or modifies tests while "fixing" bugs.
+
+**Why modes help:** Separate `test-dev` and `feature-dev` phases with file permissions. Claude literally cannot edit source files until a failing test exists, and cannot touch tests while implementing. The red-green-refactor cycle becomes the only path forward.
+
+### Design-First Development
+
+**The problem:** Claude starts coding before design decisions are documented and approved.
+
+**Why modes help:** A `design` mode that only allows editing docs/design files. The transition constraint requires design approval before moving to implementation. Claude can explore and prototype in design mode, but can't ship code until the approach is locked in.
+
+### Bug Triage
+
+**The problem:** Claude attempts fixes without first reproducing and diagnosing the issue.
+
+**Why modes help:** A `reproduce` → `diagnose` → `fix` workflow. In `reproduce` mode, Claude can only read code and run tests - no edits allowed. It must demonstrate the bug exists before moving on. In `diagnose` mode, it documents the root cause before `fix` mode unlocks editing.
+
+### Refactoring
+
+**The problem:** Claude makes changes without ensuring tests pass before and after.
+
+**Why modes help:** A `verify-green` → `refactor` → `verify-green` cycle. The first phase confirms tests pass (constraint: "all tests passing"). Refactoring mode allows edits but the transition back requires tests to pass again. No refactor can leave tests broken.
+
+### Security-Sensitive Changes
+
+**The problem:** Claude modifies auth, crypto, or other sensitive code without proper review.
+
+**Why modes help:** Permissions can restrict which files are editable in each mode. A `security-review` mode might allow reading sensitive files but require explicit user approval (via forced transition) before entering a mode that can edit them.
 
 ## Best Practices
 
