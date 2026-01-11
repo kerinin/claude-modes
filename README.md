@@ -58,9 +58,9 @@ This gives you a working TDD workflow out of the box. Read on to understand what
 
 ### Configuration Files
 
-All config lives in your project's `.claude/` directory. There are three types of files:
+Modes config lives in your project's `.claude/` directory:
 
-#### `modes.yaml` - The Workflow Definition
+#### `.claude/modes.yaml` - The Workflow Definition
 
 This is your state machine. It defines what modes exist and when Claude can move between them.
 
@@ -89,12 +89,12 @@ modes:
 
 The `constraint` is shown to Claude and guides when it should transition. Claude evaluates whether the constraint is satisfied and calls the transition tool when ready.
 
-#### `CLAUDE.<mode>.md` - Mode Instructions
+#### `.claude/CLAUDE.<mode>.md` - Mode Instructions
 
-These are injected into Claude's context when in that mode. Use them to focus Claude's attention and remind it what phase it's in.
+Mode-specific instructions that get injected when Claude is in that mode. These are separate from your project's root `CLAUDE.md` - think of them as modular additions that apply only during specific workflow phases.
 
 ```markdown
-<!-- CLAUDE.test-dev.md -->
+<!-- .claude/CLAUDE.test-dev.md -->
 You are writing a failing test. Focus on:
 1. Understanding the expected behavior
 2. Writing a test that verifies that behavior
@@ -103,9 +103,9 @@ You are writing a failing test. Focus on:
 Do NOT modify implementation code in this mode.
 ```
 
-These instructions survive context compaction because they're re-injected on every prompt.
+These survive context compaction because they're re-injected on every prompt - unlike instructions in the conversation that get lost when the context window fills up.
 
-#### `settings.<mode>.json` - Mode Permissions
+#### `.claude/settings.<mode>.json` - Mode Permissions
 
 These enforce what Claude can actually do. The `allow` and `deny` lists use glob patterns to control file access.
 
