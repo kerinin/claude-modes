@@ -1,0 +1,11 @@
+{
+  "name": "claude-modes",
+  "description": "Modal execution plugins for Claude Code",
+  "plugins": [
+    {
+      "name": "modes",
+      "description": "Enforce workflows like TDD by limiting actions based on current mode",
+      "path": "."
+    }
+  ]
+}
