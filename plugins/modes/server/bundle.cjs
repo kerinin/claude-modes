@@ -29890,16 +29890,20 @@ function executeTransition(input, stateFilePath, config2) {
 
 // src/combined-server.ts
 async function main() {
-  const configDir = process.env.CLAUDE_MODES_CONFIG_DIR || path2.join(process.cwd(), ".claude");
-  const socketPath = process.env.CLAUDE_MODES_SOCKET || path2.join(configDir, "mode.sock");
+  const envConfigDir = process.env.CLAUDE_MODES_CONFIG_DIR;
+  const configDir = !envConfigDir || envConfigDir.includes("${") ? path2.join(process.cwd(), ".claude") : envConfigDir;
+  const envSocketPath = process.env.CLAUDE_MODES_SOCKET;
+  const socketPath = !envSocketPath || envSocketPath.includes("${") ? path2.join(configDir, "mode.sock") : envSocketPath;
   const stateFilePath = path2.join(configDir, "mode-state.json");
+  console.error(`Config dir: ${configDir}`);
+  console.error(`Socket path: ${socketPath}`);
   const configResult = loadAllConfig(configDir);
-  if (!configResult.success) {
-    console.error(`Failed to load config: ${configResult.error}`);
-    process.exit(1);
+  const configError = configResult.success ? null : configResult.error;
+  const config2 = configResult.success ? configResult.config : { initial: "unconfigured", states: { unconfigured: { name: "unconfigured", transitions: [] } } };
+  const modeConfigs = configResult.success ? configResult.modeConfigs : { unconfigured: { instructions: null, permissions: null } };
+  if (configError) {
+    console.error(`Warning: ${configError}. Server running in unconfigured mode.`);
   }
-  const config2 = configResult.config;
-  const modeConfigs = configResult.modeConfigs;
   function readState3() {
     try {
       if (fs4.existsSync(stateFilePath)) {

@@ -17,7 +17,10 @@
       "Bash(__NEW_LINE__ echo \"\")",
       "WebFetch(domain:json.schemastore.org)",
       "WebFetch(domain:www.schemastore.org)",
-      "Bash(/bin/rm:*)"
+      "Bash(/bin/rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

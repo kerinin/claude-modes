@@ -35,21 +35,37 @@ interface StateFile {
 }
 
 async function main() {
-  const configDir =
-    process.env.CLAUDE_MODES_CONFIG_DIR || path.join(process.cwd(), ".claude");
-  const socketPath =
-    process.env.CLAUDE_MODES_SOCKET || path.join(configDir, "mode.sock");
+  // Resolve config directory - handle unexpanded env vars (known Claude Code bug)
+  const envConfigDir = process.env.CLAUDE_MODES_CONFIG_DIR;
+  const configDir = (!envConfigDir || envConfigDir.includes("${"))
+    ? path.join(process.cwd(), ".claude")
+    : envConfigDir;
+
+  const envSocketPath = process.env.CLAUDE_MODES_SOCKET;
+  const socketPath = (!envSocketPath || envSocketPath.includes("${"))
+    ? path.join(configDir, "mode.sock")
+    : envSocketPath;
+
   const stateFilePath = path.join(configDir, "mode-state.json");
+
+  console.error(`Config dir: ${configDir}`);
+  console.error(`Socket path: ${socketPath}`);
 
   // Load config once, shared by both servers
   const configResult = loadAllConfig(configDir);
-  if (!configResult.success) {
-    console.error(`Failed to load config: ${configResult.error}`);
-    process.exit(1);
-  }
 
-  const config: WorkflowConfig = configResult.config;
-  const modeConfigs: Record<string, LoadedModeConfig> = configResult.modeConfigs;
+  // Handle missing/invalid config gracefully
+  const configError = configResult.success ? null : configResult.error;
+  const config: WorkflowConfig = configResult.success
+    ? configResult.config
+    : { initial: "unconfigured", states: { unconfigured: { name: "unconfigured", transitions: [] } } };
+  const modeConfigs: Record<string, LoadedModeConfig> = configResult.success
+    ? configResult.modeConfigs
+    : { unconfigured: { instructions: null, permissions: null } };
+
+  if (configError) {
+    console.error(`Warning: ${configError}. Server running in unconfigured mode.`);
+  }
 
   // --- State helpers (shared) ---
 
