@@ -60,9 +60,10 @@ modes:
 
 ### Slash Commands
 
-- `/mode` - Show current mode and available transitions
-- `/mode <name>` - Force transition to a mode (requires approval)
-- `/mode reset` - Return to default mode
+- `/modes:mode` - Show current mode and available transitions
+- `/modes:mode <name>` - Force transition to a mode (requires approval)
+- `/modes:mode reset` - Return to default mode
+- `/modes:setup` - Configure auto-approval permissions
 
 ### Automatic Behavior
 

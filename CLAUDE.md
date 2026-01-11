@@ -51,5 +51,6 @@ npm test           # Run tests
 | `src/context-renderer.ts` | Render context for UserPromptSubmit hook |
 | `src/permission-checker.ts` | Check permissions for PreToolUse hook |
 | `plugins/modes/.claude-plugin/plugin.json` | Plugin manifest |
+| `plugins/modes/.mcp.json` | MCP server configuration |
 | `plugins/modes/hooks/hooks.json` | Hook configurations |
 | `.claude-plugin/marketplace.json` | Marketplace manifest |
