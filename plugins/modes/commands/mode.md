@@ -4,20 +4,16 @@ description: Control workflow mode state
 
 Arguments: $ARGUMENTS
 
-You MUST call an MCP tool. Do NOT just print help or explanations.
+IMPORTANT: Do NOT use Bash commands. Do NOT read files. Call the MCP tool directly.
 
-Based on the arguments, take ONE of these actions:
+If arguments is empty, "status", or missing:
+  → Call `mcp__modes__status` tool with no parameters
 
-1. If no arguments OR argument is "status":
-   → Call the `mcp__modes__status` MCP tool immediately
+If arguments is "reset":
+  → Call `mcp__modes__force_transition` tool with `{"target": "idle"}`
 
-2. If argument is "reset":
-   → Call `mcp__modes__force_transition` MCP tool with parameter target="idle"
+If arguments is "help":
+  → Reply with: `/mode` `/mode status` `/mode <name>` `/mode reset`
 
-3. If argument is "help":
-   → Print: `/mode` `/mode status` `/mode <name>` `/mode reset`
-
-4. If argument is any other string (a mode name):
-   → Call `mcp__modes__force_transition` MCP tool with parameter target="<that argument>"
-
-IMPORTANT: For options 1, 2, and 4 you must invoke the MCP tool, not describe it.
+Otherwise (arguments is a mode name like "test-dev"):
+  → Call `mcp__modes__force_transition` tool with `{"target": "<arguments>"}`
