@@ -91,7 +91,7 @@ The `constraint` is shown to Claude and guides when it should transition. Claude
 
 #### `.claude/CLAUDE.<mode>.md` - Mode Instructions
 
-Mode-specific instructions that get injected when Claude is in that mode. These are separate from your project's root `CLAUDE.md` - think of them as modular additions that apply only during specific workflow phases.
+These work just like your project's root `CLAUDE.md`, but only get loaded when Claude is in that mode. Use them to give Claude mode-specific guidance.
 
 ```markdown
 <!-- .claude/CLAUDE.test-dev.md -->
@@ -103,11 +103,11 @@ You are writing a failing test. Focus on:
 Do NOT modify implementation code in this mode.
 ```
 
-These survive context compaction because they're re-injected on every prompt - unlike instructions in the conversation that get lost when the context window fills up.
+Your root `CLAUDE.md` is always loaded. Mode instructions are additive - they don't replace your base instructions, they supplement them for that phase of work.
 
 #### `.claude/settings.<mode>.json` - Mode Permissions
 
-These enforce what Claude can actually do. The `allow` and `deny` lists use glob patterns to control file access.
+These constrain what Claude can do while in a specific mode. The `allow` and `deny` lists use glob patterns to control file and tool access.
 
 ```json
 {
@@ -126,7 +126,7 @@ These enforce what Claude can actually do. The `allow` and `deny` lists use glob
 }
 ```
 
-This is the enforcement layer. Even if Claude tries to edit a source file in `test-dev` mode, the hook will block it.
+In this example, while in `test-dev` mode Claude can read anything, write/edit test files, and run tests - but it cannot touch source files. The hook blocks the action before it happens.
 
 **Permissions are optional.** If you just want transitions as guideposts without hard enforcement, skip the settings files entirely.
 
@@ -193,3 +193,45 @@ The `examples/` directory includes:
 - Ensures red-green-refactor cycle
 
 You can create workflows for other processes: design-first development, code review gates, documentation-driven development, or anything else with sequential phases and constraints.
+
+## Best Practices
+
+### Keep your base permissions open
+
+Your project's base `settings.json` permissions are always enforced - mode permissions can only add restrictions, not remove them. If your base settings deny `Write(src/**)`, no mode can override that.
+
+This means your base permissions should generally be permissive. Let modes handle the restrictions for specific workflow phases.
+
+### Start with transitions, add permissions later
+
+You don't need permissions to get value from modes. Start with just `modes.yaml` - the transition constraints alone help Claude follow your workflow. Add `settings.<mode>.json` files later if you find Claude needs harder guardrails.
+
+### Write constraints for Claude, not for you
+
+Constraints are shown to Claude to help it decide when to transition. Write them as clear conditions Claude can evaluate:
+
+```yaml
+# Good - Claude can check this
+constraint: A failing test exists that covers the bug
+
+# Less good - vague, hard to evaluate
+constraint: Ready to implement
+```
+
+### Mode instructions should focus, not repeat
+
+`CLAUDE.<mode>.md` files work best when they focus Claude's attention on the current phase. Don't repeat everything from your root `CLAUDE.md` - mode instructions are additive.
+
+```markdown
+<!-- Good - focused on this phase -->
+You are writing a failing test. Focus on the expected behavior.
+Do NOT modify implementation code yet.
+
+<!-- Less good - restating general practices -->
+You are writing a failing test. Follow our coding standards.
+Use TypeScript. Write clean code. Add comments...
+```
+
+### Design for how you actually work
+
+Don't copy a workflow verbatim - adapt it to your actual process. If you sometimes skip writing tests for trivial changes, maybe your constraint should be "User has described a bug or feature that warrants a test" rather than requiring tests for everything.
