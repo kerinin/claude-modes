@@ -4,9 +4,9 @@ description: Control workflow mode state
 
 Arguments: $ARGUMENTS
 
-Immediately call the appropriate MCP tool (do not read files first):
+Use the MCP tools from the "modes" server. Do NOT use Bash - invoke the MCP tool directly:
 
-- No args or "status": Call `status` tool
-- "reset": Call `force_transition` with target "idle"
-- "<mode-name>": Call `force_transition` with that target
-- "help": Show: `/mode`, `/mode status`, `/mode <name>`, `/mode reset`
+- No args or "status": Use `mcp__modes__status` tool
+- "reset": Use `mcp__modes__force_transition` tool with target: "idle"
+- "<mode-name>": Use `mcp__modes__force_transition` tool with target set to that mode name
+- "help": Show available commands: `/mode`, `/mode status`, `/mode <name>`, `/mode reset`
