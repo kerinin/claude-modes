@@ -1,20 +1,25 @@
 {
-  "name": "modes-server",
+  "name": "claude-modes",
   "version": "0.1.0",
-  "description": "MCP server for modes plugin",
+  "description": "Modal execution for Claude Code - enforce workflows like TDD by limiting actions based on current mode",
   "type": "module",
   "main": "dist/combined-server.js",
-  "bin": {
-    "modes-server": "dist/combined-server.js"
-  },
   "scripts": {
     "build": "tsc",
-    "bundle": "npm run build && npx esbuild src/combined-server.ts --bundle --platform=node --target=node18 --format=cjs --outfile=../modes/server/bundle.cjs",
+    "bundle": "npm run build && npx esbuild src/combined-server.ts --bundle --platform=node --target=node18 --format=cjs --outfile=server/bundle.cjs",
     "dev": "tsc --watch",
     "start": "node dist/combined-server.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "author": {
+    "name": "Ryan Michael"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryanmichaelhirst/claude-modes"
+  },
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "picomatch": "^4.0.3",

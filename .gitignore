@@ -2,3 +2,4 @@ node_modules/
 dist/
 *.sock
 mode-state.json
+package-lock.json

@@ -3,16 +3,17 @@
 ## Project Structure
 
 ```
-packages/
-├── modes/           # Plugin (distributed to users)
-│   ├── plugin.json
-│   ├── server/bundle.cjs
-│   ├── commands/
-│   ├── hooks/
-│   └── examples/
-│
-└── modes-server/    # MCP server source code
-    └── src/
+claude-modes/
+├── .claude-plugin/
+│   └── plugin.json     # Plugin manifest
+├── commands/           # Slash commands
+├── hooks/              # Hook configurations
+├── server/
+│   └── bundle.cjs      # Bundled server for distribution
+├── src/                # Server source code
+├── examples/           # Example mode configurations
+└── docs/
+    └── design.md       # Architecture documentation
 ```
 
 ## Design Document
@@ -34,9 +35,8 @@ Update `docs/design.md` if you:
 ## Build Commands
 
 ```bash
-# In packages/modes-server/
 npm run build      # Compile TypeScript
-npm run bundle     # Build + bundle to ../modes/server/bundle.cjs
+npm run bundle     # Build + bundle to server/bundle.cjs
 npm test           # Run tests
 ```
 
@@ -44,9 +44,9 @@ npm test           # Run tests
 
 | File | Purpose |
 |------|---------|
-| `modes-server/src/combined-server.ts` | Main server (MCP + HTTP) |
-| `modes-server/src/config-loader.ts` | Load modes.yaml and mode configs |
-| `modes-server/src/context-renderer.ts` | Render context for UserPromptSubmit hook |
-| `modes-server/src/permission-checker.ts` | Check permissions for PreToolUse hook |
-| `modes/plugin.json` | Plugin manifest |
-| `modes/hooks/hooks.json` | Hook configurations |
+| `src/combined-server.ts` | Main server (MCP + HTTP) |
+| `src/config-loader.ts` | Load modes.yaml and mode configs |
+| `src/context-renderer.ts` | Render context for UserPromptSubmit hook |
+| `src/permission-checker.ts` | Check permissions for PreToolUse hook |
+| `.claude-plugin/plugin.json` | Plugin manifest |
+| `hooks/hooks.json` | Hook configurations |

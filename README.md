@@ -5,7 +5,7 @@ Modal execution for Claude Code - enforce workflows like TDD by limiting actions
 ## Installation
 
 ```
-/plugin install modes
+/plugin add github:ryanmichaelhirst/claude-modes
 ```
 
 ## Setup
