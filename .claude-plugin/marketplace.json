@@ -1,11 +1,14 @@
 {
   "name": "claude-modes",
   "description": "Modal execution plugins for Claude Code",
+  "owner": {
+    "name": "Ryan Michael"
+  },
   "plugins": [
     {
       "name": "modes",
       "description": "Enforce workflows like TDD by limiting actions based on current mode",
-      "path": "."
+      "source": "."
     }
   ]
 }
