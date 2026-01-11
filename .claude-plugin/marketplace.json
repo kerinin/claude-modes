@@ -1,14 +1,21 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-modes",
   "description": "Modal execution plugins for Claude Code",
   "owner": {
-    "name": "Ryan Michael"
+    "name": "Ryan Michael",
+    "email": "ryan@example.com"
   },
   "plugins": [
     {
       "name": "modes",
       "description": "Enforce workflows like TDD by limiting actions based on current mode",
-      "source": "."
+      "version": "0.1.0",
+      "author": {
+        "name": "Ryan Michael"
+      },
+      "source": "./",
+      "category": "development"
     }
   ]
 }
