@@ -5,7 +5,8 @@ Modal execution for Claude Code - enforce workflows like TDD by limiting actions
 ## Installation
 
 ```
-/plugin add github:ryanmichaelhirst/claude-modes
+/plugin marketplace add kerinin/claude-modes
+/plugin install modes@claude-modes
 ```
 
 ## Setup

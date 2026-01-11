@@ -2,7 +2,22 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "Bash(npm pack:*)",
+      "Bash(ls:*)",
+      "Bash(node -e \"\nconst fs = require\\(''fs''\\);\nconst code = fs.readFileSync\\(''/tmp/package/cli.js'', ''utf8''\\);\n\n// Look for code that parses Tool\\(specifier\\) format\n// This regex pattern would match things like parsing ''Bash\\(npm *\\)'' or ''Edit\\(src/**\\)''\nconst regex = /\\\\\\(\\([^\\)]+\\)\\\\\\)\\\\s*{\\\\s*[^}]*tool.*specifier/gi;\nlet match;\nwhile \\(\\(match = regex.exec\\(code\\)\\) !== null\\) {\n  console.log\\(code.slice\\(Math.max\\(0, match.index - 100\\), match.index + 300\\)\\);\n  console.log\\(''---''\\);\n}\n\")",
+      "Bash(node -e \"\nconst fs = require\\(''fs''\\);\nconst code = fs.readFileSync\\(''/tmp/package/cli.js'', ''utf8''\\);\n\n// Find the filePatternTools section and surrounding code\nconst idx = code.indexOf\\(''filePatternTools''\\);\nif \\(idx !== -1\\) {\n  console.log\\(code.slice\\(Math.max\\(0, idx-100\\), idx+2000\\)\\);\n}\n\")",
+      "Bash(node:*)",
+      "Bash(npm test:*)",
+      "Bash(CLAUDE_MODES_CONFIG_DIR=.claude CLAUDE_MODES_SOCKET=.claude/test.sock timeout 2 node:*)",
+      "Bash(echo:*)",
+      "Bash(__NEW_LINE__ echo \"\")",
+      "WebFetch(domain:json.schemastore.org)",
+      "WebFetch(domain:www.schemastore.org)",
+      "Bash(/bin/rm:*)"
     ]
   }
 }

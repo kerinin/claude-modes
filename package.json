@@ -6,7 +6,7 @@
   "main": "dist/combined-server.js",
   "scripts": {
     "build": "tsc",
-    "bundle": "npm run build && npx esbuild src/combined-server.ts --bundle --platform=node --target=node18 --format=cjs --outfile=server/bundle.cjs",
+    "bundle": "npm run build && npx esbuild src/combined-server.ts --bundle --platform=node --target=node18 --format=cjs --outfile=plugins/modes/server/bundle.cjs",
     "dev": "tsc --watch",
     "start": "node dist/combined-server.js",
     "test": "vitest run",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryanmichaelhirst/claude-modes"
+    "url": "https://github.com/kerinin/claude-modes"
   },
   "license": "MIT",
   "dependencies": {

@@ -5,7 +5,7 @@
   "author": {
     "name": "Ryan Michael"
   },
-  "repository": "https://github.com/ryanmichaelhirst/claude-modes",
+  "repository": "https://github.com/kerinin/claude-modes",
   "commands": ["commands/mode.md", "commands/setup.md"],
   "hooks": "hooks/hooks.json",
   "mcpServers": {

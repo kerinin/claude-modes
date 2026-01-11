@@ -3,3 +3,5 @@ dist/
 *.sock
 mode-state.json
 package-lock.json
+test-project/
+plugin-test-project/

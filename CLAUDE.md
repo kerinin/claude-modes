@@ -5,15 +5,17 @@
 ```
 claude-modes/
 ├── .claude-plugin/
-│   └── plugin.json     # Plugin manifest
-├── commands/           # Slash commands
-├── hooks/              # Hook configurations
-├── server/
-│   └── bundle.cjs      # Bundled server for distribution
-├── src/                # Server source code
-├── examples/           # Example mode configurations
+│   └── marketplace.json   # Marketplace manifest
+├── plugins/
+│   └── modes/             # The plugin
+│       ├── .claude-plugin/plugin.json
+│       ├── commands/
+│       ├── hooks/
+│       ├── server/bundle.cjs
+│       └── examples/
+├── src/                   # Server source code
 └── docs/
-    └── design.md       # Architecture documentation
+    └── design.md          # Architecture documentation
 ```
 
 ## Design Document
@@ -36,7 +38,7 @@ Update `docs/design.md` if you:
 
 ```bash
 npm run build      # Compile TypeScript
-npm run bundle     # Build + bundle to server/bundle.cjs
+npm run bundle     # Build + bundle to plugins/modes/server/bundle.cjs
 npm test           # Run tests
 ```
 
@@ -48,5 +50,6 @@ npm test           # Run tests
 | `src/config-loader.ts` | Load modes.yaml and mode configs |
 | `src/context-renderer.ts` | Render context for UserPromptSubmit hook |
 | `src/permission-checker.ts` | Check permissions for PreToolUse hook |
-| `.claude-plugin/plugin.json` | Plugin manifest |
-| `hooks/hooks.json` | Hook configurations |
+| `plugins/modes/.claude-plugin/plugin.json` | Plugin manifest |
+| `plugins/modes/hooks/hooks.json` | Hook configurations |
+| `.claude-plugin/marketplace.json` | Marketplace manifest |
