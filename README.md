@@ -182,6 +182,32 @@ Sometimes you need to override the workflow. The slash commands let you interven
 
 Force transitions require explicit approval because they bypass the constraint system. This is intentional - the workflow should guide normal operation, with manual overrides as the exception.
 
+### Status Line
+
+You can display the current mode in Claude Code's status line - similar to how terminal prompts show the git branch. This gives you constant visibility into which mode is active.
+
+When configured, you'll see something like `⟪test-dev⟫` at the bottom of Claude Code.
+
+To set this up, run `/modes:setup` and opt in when asked about the status line. Or manually:
+
+1. Copy the script:
+```bash
+cp ~/.claude/plugins/modes/examples/statusline/modes-statusline.sh ~/.claude/
+chmod +x ~/.claude/modes-statusline.sh
+```
+
+2. Add to `~/.claude/settings.json`:
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/modes-statusline.sh"
+  }
+}
+```
+
+The status line updates automatically when you transition between modes.
+
 ## Example Workflows
 
 The `examples/` directory includes a TDD workflow. Here are other workflows where modes shine:
